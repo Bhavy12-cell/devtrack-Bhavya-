@@ -19,7 +19,7 @@ interface WeeklySummaryData {
     thisWeek: number;
     lastWeek: number;
   };
-  productivityScore: {
+  productivityScore?: {
     current: number;
     previous: number;
   };
@@ -81,7 +81,9 @@ export default function WeeklySummaryCard() {
   const handleDownload = () => {
     if (!summary) return;
 
-    const scoreDiff = summary.productivityScore.current - summary.productivityScore.previous;
+    const scoreDiff = summary.productivityScore
+      ? summary.productivityScore.current - summary.productivityScore.previous
+      : 0;
     const scoreSign = scoreDiff >= 0 ? "+" : "";
 
     const reportText = `
@@ -95,15 +97,12 @@ Change              : ${summary.commits.trend === "up" ? "+" : summary.commits.t
 
 PRs Opened          : ${summary.prs.thisWeek.opened}
 PRs Merged          : ${summary.prs.thisWeek.merged}
-
-Issues Resolved     : ${summary.issues?.thisWeek ?? "-"}
-Issues Last Week    : ${summary.issues?.lastWeek ?? "-"}
+${summary.issues ? `\nIssues Resolved     : ${summary.issues.thisWeek}\nIssues Last Week    : ${summary.issues.lastWeek}` : ""}
 
 Active Days         : ${summary.activeDays.thisWeek} / 7
 Current Streak      : ${summary.streak} days
 Top Repository      : ${summary.topRepo ?? "-"}
-
-Productivity Score  : ${summary.productivityScore.current} (${scoreSign}${scoreDiff} vs last week)
+${summary.productivityScore ? `\nProductivity Score  : ${summary.productivityScore.current} (${scoreSign}${scoreDiff} vs last week)` : ""}
 
 ========================================
     `.trim();
