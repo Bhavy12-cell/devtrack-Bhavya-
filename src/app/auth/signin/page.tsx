@@ -4,6 +4,7 @@ import { signIn } from "next-auth/react";
 import { Suspense, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 const A = "#818cf8";
 const ERR = "#f87171";
@@ -12,27 +13,22 @@ const DISP = "var(--font-syne, system-ui, sans-serif)";
 
 /** Maps NextAuth error codes → user-facing messages. */
 const AUTH_ERROR_MESSAGES: Record<string, string> = {
-  github:
-    "GitHub sign-in failed. This is usually caused by incorrect OAuth credentials or a mismatched callback URL. Check your GitHub OAuth App settings and try again.",
-  OAuthCallback:
-    "The OAuth callback could not be completed. Please try signing in again.",
-  OAuthSignin:
-    "Could not start the GitHub sign-in flow. Please try again.",
-  Configuration:
-    "There is a server configuration error. Please contact the site administrator.",
-  AccessDenied:
-    "Access was denied. You may have cancelled the GitHub authorization.",
-  Verification:
-    "The sign-in link has expired or has already been used.",
-  Default:
-    "An unexpected authentication error occurred. Please try again.",
+  github: "githubError",
+  OAuthCallback: "oauthCallbackError",
+  OAuthSignin: "oauthSigninError",
+  Configuration: "configurationError",
+  AccessDenied: "accessDeniedError",
+  Verification: "verificationError",
+  Default: "defaultError",
 };
 
-function getErrorMessage(error: string): string {
+function getErrorMessageKey(error: string): string {
   return AUTH_ERROR_MESSAGES[error] ?? AUTH_ERROR_MESSAGES.Default;
 }
 
 function AuthErrorBanner({ error }: { error: string }) {
+  const t = useTranslations("auth");
+
   return (
     <div
       role="alert"
@@ -58,7 +54,7 @@ function AuthErrorBanner({ error }: { error: string }) {
           textTransform: "uppercase",
         }}
       >
-        ⚠ Sign-in failed
+        ⚠ {t("signInFailed")}
       </p>
       <p
         style={{
@@ -69,7 +65,7 @@ function AuthErrorBanner({ error }: { error: string }) {
           lineHeight: 1.65,
         }}
       >
-        {getErrorMessage(error)}
+        {t(getErrorMessageKey(error))}
       </p>
     </div>
   );
@@ -108,6 +104,8 @@ function MouseSpotlight() {
  * boundary because useSearchParams() opts the subtree out of static rendering.
  */
 function SignInContent() {
+  const t = useTranslations("auth");
+  const common = useTranslations("common");
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
 
@@ -162,7 +160,7 @@ function SignInContent() {
     textDecoration: "none",
   fontSize:12 }}
         >
-           ← Back to home
+           ← {common("backToHome")}
         </Link>
       </div>
 
@@ -193,8 +191,8 @@ function SignInContent() {
             margin: "0 0 16px",
           }}
         >
-          WELCOME<br />
-          <span style={{ color: A }}>BACK.</span>
+          {t("welcome")}<br />
+          <span style={{ color: A }}>{t("back")}</span>
         </h1>
 
         <p
@@ -206,7 +204,7 @@ function SignInContent() {
             fontFamily: MONO,
           }}
         >
-          Track streaks, PR velocity &amp; coding growth.
+          {t("tagline")}
         </p>
 
         {error && <AuthErrorBanner error={error} />}
@@ -214,10 +212,10 @@ function SignInContent() {
         <button
           type="button"
           onClick={() => signIn("github", { callbackUrl: "/dashboard" })}
-          aria-label="Sign in with GitHub"
+          aria-label={t("signInWithGitHub")}
           className="primary-button relative w-full inline-flex items-center justify-center gap-3 rounded-xl py-3 font-semibold"
         >
-          Sign in with GitHub
+          {t("signInWithGitHub")}
         </button>
 
         <div
@@ -229,7 +227,7 @@ function SignInContent() {
             lineHeight: 1.8,
           }}
         >
-          MIT License · Self-hostable · Free forever
+          {t("licenseLine")}
         </div>
       </div>
       </div>

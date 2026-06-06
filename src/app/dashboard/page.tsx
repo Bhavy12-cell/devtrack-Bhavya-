@@ -10,10 +10,13 @@ import DashboardSSEProvider from "@/components/DashboardSSEProvider";
 import StreakAtRiskBanner from "@/components/StreakAtRiskBanner";
 import ThrottleBanner from "@/components/ThrottleBanner";
 import CustomizableDashboard from "@/components/dashboard/CustomizableDashboard";
+import { getTranslations } from "next-intl/server";
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/");
+  const t = await getTranslations("dashboard");
+  const common = await getTranslations("common");
 
   return (
     <DashboardSSEProvider>
@@ -28,14 +31,14 @@ export default async function DashboardPage() {
               href="/wrapped"
               className="inline-flex w-full sm:w-auto justify-center items-center gap-2 rounded-xl border border-[var(--accent)] bg-[var(--accent)]/10 px-5 py-2.5 text-sm font-semibold text-[var(--accent)] shadow-sm shadow-[var(--accent)]/20 transition-all hover:bg-[var(--accent)]/20 hover:scale-[1.02]"
             >
-              Year in Code
+              {t("yearInCode")}
             </Link>
 
             <Link
               href="/dashboard/settings"
               className="inline-flex w-full sm:w-auto justify-center items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-medium transition-all hover:bg-white/10 hover:scale-[1.02]"
             >
-              Settings
+              {common("settings")}
             </Link>
           </div>
 
@@ -58,21 +61,19 @@ export default async function DashboardPage() {
             <div className="space-y-2 max-w-xl">
               <div className="flex items-center gap-2">
                 <span className="text-[10px] uppercase font-bold text-violet-400 tracking-wider px-2 py-0.5 rounded bg-violet-500/10 border border-violet-500/20">
-                  New Feature
+                  {t("newFeature")}
                 </span>
                 <span className="text-xs text-[var(--muted-foreground)]">
-                  AI Resume Generator
+                  {t("resumeGenerator")}
                 </span>
               </div>
 
               <h3 className="text-lg font-bold text-[var(--foreground)]">
-                Generate an ATS-Friendly CV Backed by Your Real Code
+                {t("resumeHeadline")}
               </h3>
 
               <p className="text-xs text-[var(--muted-foreground)] leading-relaxed">
-                Analyze your GitHub contributions, merged PRs, and lines of code
-                changed to automatically generate professional bullet points for
-                your target roles.
+                {t("resumeDescription")}
               </p>
             </div>
 
@@ -80,7 +81,7 @@ export default async function DashboardPage() {
               href="/dashboard/career-intelligence"
               className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-indigo-500/20 hover:scale-[1.03] transition-all whitespace-nowrap"
             >
-              Build Resume
+              {t("buildResume")}
               <ChevronRight className="h-4 w-4" />
             </Link>
           </div>

@@ -7,14 +7,36 @@ import { encryptToken } from "@/lib/crypto";
 import { validateTextInput } from "@/lib/sanitize";
 import { clearLeaderboardCache } from "@/lib/leaderboard";
 import { cacheGet, cacheSet, cacheDelete } from "@/lib/metrics-cache";
+import {
+  defaultLocale,
+  isValidLocale,
+  localeCookieMaxAge,
+  localeCookieName,
+} from "@/i18n/config";
 
 export const dynamic = "force-dynamic";
+
+function settingsResponse(body: Record<string, unknown>, status = 200) {
+  const response = NextResponse.json(body, { status });
+  const preferredLocale =
+    typeof body.preferred_locale === "string" && isValidLocale(body.preferred_locale)
+      ? body.preferred_locale
+      : defaultLocale;
+
+  response.cookies.set(localeCookieName, preferredLocale, {
+    maxAge: localeCookieMaxAge,
+    path: "/",
+    sameSite: "lax",
+  });
+
+  return response;
+}
 
 async function fetchUserSettings(userId: string) {
   // Tier 1: All columns
   const res1 = await supabaseAdmin
     .from("users")
-    .select("id, github_login, bio, is_public, public_since, show_weekly_goals, leaderboard_opt_in, pinned_repos, wakatime_api_key_encrypted, wakatime_api_key_iv, weekly_digest_opt_in, discord_webhook_url, timezone, webhook_url, discord_muted_until")
+    .select("id, github_login, bio, is_public, public_since, show_weekly_goals, leaderboard_opt_in, pinned_repos, wakatime_api_key_encrypted, wakatime_api_key_iv, weekly_digest_opt_in, discord_webhook_url, timezone, webhook_url, discord_muted_until, preferred_locale")
     .eq("id", userId)
     .single();
 
@@ -30,6 +52,7 @@ async function fetchUserSettings(userId: string) {
       hasBio: true,
       hasWebhookUrl: true,
       hasDiscordMutedUntil: true,
+      hasPreferredLocale: true,
       leaderboard_opt_in: (res1.data as any).leaderboard_opt_in ?? false,
       weekly_digest_opt_in: (res1.data as any).weekly_digest_opt_in ?? false,
       pinned_repos: (res1.data as any).pinned_repos || [],
@@ -39,6 +62,7 @@ async function fetchUserSettings(userId: string) {
       timezone: (res1.data as any).timezone || "UTC",
       webhook_url: (res1.data as any).webhook_url || null,
       discord_muted_until: (res1.data as any).discord_muted_until || null,
+      preferred_locale: (res1.data as any).preferred_locale || defaultLocale,
     };
   }
 
@@ -54,6 +78,7 @@ async function fetchUserSettings(userId: string) {
       hasBio: false,
       hasWebhookUrl: false,
       hasDiscordMutedUntil: false,
+      hasPreferredLocale: false,
       leaderboard_opt_in: false,
       weekly_digest_opt_in: false,
       pinned_repos: [] as string[],
@@ -63,6 +88,7 @@ async function fetchUserSettings(userId: string) {
       timezone: "UTC",
       webhook_url: null,
       discord_muted_until: null,
+      preferred_locale: defaultLocale,
     };
   }
 
@@ -85,6 +111,7 @@ async function fetchUserSettings(userId: string) {
       hasBio: false,
       hasWebhookUrl: true,
       hasDiscordMutedUntil: false,
+      hasPreferredLocale: false,
       leaderboard_opt_in: (res2.data as any).leaderboard_opt_in ?? false,
       weekly_digest_opt_in: false,
       pinned_repos: (res2.data as any).pinned_repos || [],
@@ -94,6 +121,7 @@ async function fetchUserSettings(userId: string) {
       timezone: "UTC",
       webhook_url: (res2.data as any).webhook_url || null,
       discord_muted_until: null,
+      preferred_locale: defaultLocale,
     };
   }
 
@@ -109,6 +137,7 @@ async function fetchUserSettings(userId: string) {
       hasBio: false,
       hasWebhookUrl: false,
       hasDiscordMutedUntil: false,
+      hasPreferredLocale: false,
       leaderboard_opt_in: false,
       weekly_digest_opt_in: false,
       pinned_repos: [] as string[],
@@ -118,6 +147,7 @@ async function fetchUserSettings(userId: string) {
       timezone: "UTC",
       webhook_url: null,
       discord_muted_until: null,
+      preferred_locale: defaultLocale,
     };
   }
 
@@ -139,6 +169,7 @@ async function fetchUserSettings(userId: string) {
       hasDiscordSettings: false,
       hasBio: false,
       hasDiscordMutedUntil: false,
+      hasPreferredLocale: false,
       leaderboard_opt_in: false,
       weekly_digest_opt_in: false,
       pinned_repos: [] as string[],
@@ -147,6 +178,7 @@ async function fetchUserSettings(userId: string) {
       discord_webhook_url: null,
       timezone: "UTC",
       discord_muted_until: null,
+      preferred_locale: defaultLocale,
     };
   }
 
@@ -161,6 +193,7 @@ async function fetchUserSettings(userId: string) {
       hasDiscordSettings: false,
       hasBio: false,
       hasDiscordMutedUntil: false,
+      hasPreferredLocale: false,
       leaderboard_opt_in: false,
       weekly_digest_opt_in: false,
       pinned_repos: [] as string[],
@@ -169,6 +202,7 @@ async function fetchUserSettings(userId: string) {
       discord_webhook_url: null,
       timezone: "UTC",
       discord_muted_until: null,
+      preferred_locale: defaultLocale,
     };
   }
 
@@ -190,6 +224,7 @@ async function fetchUserSettings(userId: string) {
       hasDiscordSettings: false,
       hasBio: false,
       hasDiscordMutedUntil: false,
+      hasPreferredLocale: false,
       leaderboard_opt_in: false,
       weekly_digest_opt_in: false,
       pinned_repos: [] as string[],
@@ -198,6 +233,7 @@ async function fetchUserSettings(userId: string) {
       discord_webhook_url: null,
       timezone: "UTC",
       discord_muted_until: null,
+      preferred_locale: defaultLocale,
     };
   }
 
@@ -211,6 +247,7 @@ async function fetchUserSettings(userId: string) {
     hasDiscordSettings: false,
     hasBio: false,
     hasDiscordMutedUntil: false,
+    hasPreferredLocale: false,
     leaderboard_opt_in: false,
     weekly_digest_opt_in: false,
     pinned_repos: [] as string[],
@@ -219,6 +256,7 @@ async function fetchUserSettings(userId: string) {
     discord_webhook_url: null,
     timezone: "UTC",
     discord_muted_until: null,
+    preferred_locale: defaultLocale,
   };
 }
 
@@ -242,7 +280,7 @@ export async function GET(req: NextRequest) {
 
   const cached = await cacheGet<Record<string, unknown>>(cacheKey, SETTINGS_TTL);
   if (cached) {
-    return NextResponse.json(cached);
+    return settingsResponse(cached);
   }
 
   const result = await fetchUserSettings(user.id);
@@ -267,10 +305,11 @@ export async function GET(req: NextRequest) {
     timezone: result.timezone,
     webhook_url: result.webhook_url ?? null,
     discord_muted_until: result.discord_muted_until ?? null,
+    preferred_locale: result.preferred_locale,
   };
 
   await cacheSet(cacheKey, response, SETTINGS_TTL);
-  return NextResponse.json(response);
+  return settingsResponse(response);
 }
 
 
@@ -290,14 +329,14 @@ export async function PATCH(req: NextRequest) {
     );
   }
 
-  let body: { is_public?: boolean; show_weekly_goals?: boolean; leaderboard_opt_in?: boolean; weekly_digest_opt_in?: boolean; pinned_repos?: string[]; wakatime_api_key?: string; discord_webhook_url?: string | null; timezone?: string; bio?: string; webhook_url?: string | null; discord_muted_until?: string | null };
+  let body: { is_public?: boolean; show_weekly_goals?: boolean; leaderboard_opt_in?: boolean; weekly_digest_opt_in?: boolean; pinned_repos?: string[]; wakatime_api_key?: string; discord_webhook_url?: string | null; timezone?: string; bio?: string; webhook_url?: string | null; discord_muted_until?: string | null; preferred_locale?: string };
   try {
     body = await req.json();
   } catch (e) {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
-  const { is_public, show_weekly_goals, leaderboard_opt_in, weekly_digest_opt_in, pinned_repos, wakatime_api_key, discord_webhook_url, timezone, bio, webhook_url, discord_muted_until } = body;
+  const { is_public, show_weekly_goals, leaderboard_opt_in, weekly_digest_opt_in, pinned_repos, wakatime_api_key, discord_webhook_url, timezone, bio, webhook_url, discord_muted_until, preferred_locale } = body;
 
   // Retrieve supported columns first
   const settingsResult = await fetchUserSettings(user.id);
@@ -306,8 +345,8 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "Failed to update settings" }, { status: 500 });
   }
 
-  const { hasLeaderboardOptIn, hasPinnedRepos, hasWakatimeKey, hasWeeklyDigestOptIn, hasDiscordSettings, hasBio, hasWebhookUrl, hasDiscordMutedUntil } = settingsResult;
-  const updates: { is_public?: boolean; public_since?: string | null; show_weekly_goals?: boolean; leaderboard_opt_in?: boolean; weekly_digest_opt_in?: boolean; pinned_repos?: string[]; wakatime_api_key_encrypted?: string | null; wakatime_api_key_iv?: string | null; discord_webhook_url?: string | null; timezone?: string; bio?: string; webhook_url?: string | null; discord_muted_until?: string | null } = {};
+  const { hasLeaderboardOptIn, hasPinnedRepos, hasWakatimeKey, hasWeeklyDigestOptIn, hasDiscordSettings, hasBio, hasWebhookUrl, hasDiscordMutedUntil, hasPreferredLocale } = settingsResult;
+  const updates: { is_public?: boolean; public_since?: string | null; show_weekly_goals?: boolean; leaderboard_opt_in?: boolean; weekly_digest_opt_in?: boolean; pinned_repos?: string[]; wakatime_api_key_encrypted?: string | null; wakatime_api_key_iv?: string | null; discord_webhook_url?: string | null; timezone?: string; bio?: string; webhook_url?: string | null; discord_muted_until?: string | null; preferred_locale?: string } = {};
 
   if (is_public !== undefined && is_public !== null && typeof is_public === "boolean") {
     updates.is_public = is_public;
@@ -422,9 +461,17 @@ export async function PATCH(req: NextRequest) {
     }
   }
 
+  if (hasPreferredLocale && preferred_locale !== undefined) {
+    if (!isValidLocale(preferred_locale)) {
+      return NextResponse.json({ error: "Unsupported locale" }, { status: 400 });
+    }
+
+    updates.preferred_locale = preferred_locale;
+  }
+
   // If there are no updates (or none that are supported by the schema)
   if (Object.keys(updates).length === 0) {
-    return NextResponse.json({
+    return settingsResponse({
       id: (settingsResult.data as any).id,
       github_login: (settingsResult.data as any).github_login,
       bio: (settingsResult.data as any).bio ?? "",
@@ -439,6 +486,7 @@ export async function PATCH(req: NextRequest) {
       timezone: settingsResult.timezone,
       webhook_url: settingsResult.webhook_url ?? null,
       discord_muted_until: settingsResult.discord_muted_until ?? null,
+      preferred_locale: settingsResult.preferred_locale,
     });
   }
 
@@ -455,6 +503,7 @@ export async function PATCH(req: NextRequest) {
   if (hasDiscordSettings) selectCols.push("discord_webhook_url", "timezone");
   if (hasDiscordMutedUntil) selectCols.push("discord_muted_until");
   if (hasWebhookUrl) selectCols.push("webhook_url");
+  if (hasPreferredLocale) selectCols.push("preferred_locale");
 
   const { data: updated, error: updateError } = await supabaseAdmin
     .from("users")
@@ -487,7 +536,7 @@ export async function PATCH(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({
+  return settingsResponse({
     id: (updated as any).id,
     github_login: (updated as any).github_login,
     bio: (updated as any).bio ?? "",
@@ -502,5 +551,6 @@ export async function PATCH(req: NextRequest) {
     timezone: (updated as any).timezone || "UTC",
     webhook_url: (updated as any).webhook_url ?? null,
     discord_muted_until: (updated as any).discord_muted_until ?? null,
+    preferred_locale: (updated as any).preferred_locale || defaultLocale,
   });
 }
