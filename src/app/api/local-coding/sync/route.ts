@@ -15,24 +15,43 @@ function hashApiKey(key: string): string {
 
 async function authenticateApiKey(apiKey: string): Promise<string | null> {
   const keyHash = hashApiKey(apiKey);
-  const keyHashFilter = `api_key_hash.eq.${keyHash},api_key.eq.${keyHash}`;
 
-  const { data: keyRecord } = await supabaseAdmin
+  // Step 1: Try modern hashed lookup first
+  const { data: hashedRecord } = await supabaseAdmin
     .from("local_coding_api_keys")
-    .select("user_id")
-    .or(keyHashFilter)
-    .single();
+    .select("id, user_id")
+    .eq("api_key_hash", keyHash)
+    .maybeSingle();
 
-  if (!keyRecord) {
-    return null;
+  if (hashedRecord) {
+    await supabaseAdmin
+      .from("local_coding_api_keys")
+      .update({ last_used_at: new Date().toISOString() })
+      .eq("id", hashedRecord.id);
+    return hashedRecord.user_id;
   }
 
-  await supabaseAdmin
+  // Step 2: Fallback for legacy plaintext keys (api_key_hash IS NULL)
+  const { data: legacyRecord } = await supabaseAdmin
     .from("local_coding_api_keys")
-    .update({ last_used_at: new Date().toISOString() })
-    .or(keyHashFilter);
+    .select("id, user_id, api_key")
+    .is("api_key_hash", null)
+    .eq("api_key", apiKey)
+    .maybeSingle();
 
-  return keyRecord.user_id;
+  if (legacyRecord) {
+    // Backfill hash — migrate legacy key to hash-only verification
+    await supabaseAdmin
+      .from("local_coding_api_keys")
+      .update({
+        api_key_hash: keyHash,
+        last_used_at: new Date().toISOString(),
+      })
+      .eq("id", legacyRecord.id);
+    return legacyRecord.user_id;
+  }
+
+  return null;
 }
 
 function validateDays(days: number): number {
