@@ -112,6 +112,7 @@ function SignInContent() {
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
 
+
   // Clear the ?error= param from the URL immediately after reading it so
   // that refreshing the page or navigating back doesn't show a stale error
   // from a previous sign-in attempt.
@@ -244,6 +245,7 @@ function SignInContent() {
         >
           Sign in with GitHub
         </button>
+
 
         <div
           style={{
